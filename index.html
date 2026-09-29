@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Kaleidoscopic community reorganization, interactive</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EDF0F2; --panel:#F8FAFB; --ink:#16202B; --muted:#5B6875; --line:#C9D1D8; --soft:#DDE3E8;
+  --block:#FFFFFF; --joint:#6B4FBF; --a:#C98A12; --b:#13807C; --sep:#5C9E4A; --cursor:#C8325A;
+  --serif:"Newsreader", "Iowan Old Style", Georgia, serif;
+  --sans:"Instrument Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#11171D; --panel:#18212A; --ink:#E4EAF0; --muted:#94A2AF; --line:#34414D; --soft:#23303B;
+    --block:#22303C; --joint:#9C83F0; --a:#E8AE3A; --b:#35B8B1; --sep:#86C66F; --cursor:#F0617F;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#11171D; --panel:#18212A; --ink:#E4EAF0; --muted:#94A2AF; --line:#34414D; --soft:#23303B;
+  --block:#22303C; --joint:#9C83F0; --a:#E8AE3A; --b:#35B8B1; --sep:#86C66F; --cursor:#F0617F;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.5}
+main{max-width:1180px;margin:0 auto;padding:28px 20px 60px}
+h1{font-family:var(--serif);font-weight:500;font-size:clamp(28px,4.2vw,44px);line-height:1.08;margin:0 0 10px;letter-spacing:-.01em}
+h2{font-family:var(--serif);font-weight:500;font-size:23px;margin:0 0 6px}
+h3{font-family:var(--sans);font-weight:600;font-size:14px;margin:0 0 6px}
+p{margin:0 0 10px}
+.lede{font-family:var(--serif);font-size:18px;line-height:1.55;max-width:72ch;color:var(--muted);margin-bottom:22px}
+.lede em{color:var(--ink)}
+.stage-wrap{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:18px;align-items:stretch}
+@media (max-width:860px){.stage-wrap{grid-template-columns:1fr}}
+.stage{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:8px;min-height:300px;position:relative}
+.stage svg{width:100%;height:auto;display:block}
+.readout{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.gbig{font-family:var(--serif);font-size:52px;line-height:1;font-weight:500;font-variant-numeric:tabular-nums}
+.gbig small{font-size:22px;color:var(--muted);font-style:italic;margin-right:6px}
+.kv{display:grid;grid-template-columns:1fr auto;gap:3px 10px;font-variant-numeric:tabular-nums}
+.kv dt{color:var(--muted)} .kv dd{margin:0;text-align:right;font-weight:600}
+.legend{display:flex;flex-direction:column;gap:5px;font-size:13px}
+.legend span{display:flex;align-items:center;gap:8px}
+.sw{width:14px;height:14px;border-radius:4px;display:inline-block;flex:none}
+.note{font-size:12.5px;color:var(--muted)}
+/* scrubber */
+.scrub{margin:16px 0 0;background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 16px 10px}
+.scrub-head{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:baseline}
+.track{position:relative;height:86px;margin-top:6px}
+.track svg{position:absolute;inset:0;width:100%;height:100%}
+.track input{position:absolute;left:0;right:0;bottom:0;width:100%;height:86px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:ew-resize}
+.track input::-webkit-slider-runnable-track{height:86px;background:transparent}
+.track input::-moz-range-track{height:86px;background:transparent}
+.track input::-webkit-slider-thumb{-webkit-appearance:none;width:4px;height:86px;background:var(--cursor);border-radius:2px;border:none}
+.track input::-moz-range-thumb{width:4px;height:86px;background:var(--cursor);border-radius:2px;border:none}
+.track input:focus-visible{outline:2px solid var(--cursor);outline-offset:4px;border-radius:6px}
+.ticks{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+button,.btn{font:inherit;font-weight:500;font-size:14px;border:1px solid var(--line);background:var(--block);color:var(--ink);border-radius:9px;padding:7px 13px;cursor:pointer}
+button.primary{background:var(--ink);color:var(--panel);border-color:var(--ink)}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--cursor);outline-offset:2px}
+.progress{height:4px;background:var(--soft);border-radius:2px;overflow:hidden;width:160px}
+.progress i{display:block;height:100%;width:0;background:var(--cursor);transition:width .15s}
+section{margin-top:34px}
+.sec-intro{max-width:74ch;color:var(--muted);font-family:var(--serif);font-size:16.5px;line-height:1.6}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:12px}
+@media (max-width:860px){.grid2{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px 16px}
+.card svg{width:100%;height:auto;display:block}
+.chart-cap{font-size:13px;color:var(--muted);margin-top:4px}
+.heat-wrap{overflow-x:auto}
+.params{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px 18px;margin:12px 0}
+.params label{display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--muted)}
+.params label b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.params .row{display:flex;justify-content:space-between}
+input[type=range].p{width:100%;accent-color:var(--ink)}
+input[type=number]{font:inherit;width:90px;padding:4px 6px;border:1px solid var(--line);border-radius:7px;background:var(--block);color:var(--ink)}
+.eq{font-family:var(--serif);font-size:19px;text-align:center;margin:10px 0 14px}
+table.th{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+table.th td,table.th th{padding:7px 6px;border-bottom:1px solid var(--soft);text-align:left;vertical-align:top}
+table.th th{color:var(--muted);font-weight:500;font-size:12.5px}
+table.th td.num{text-align:right;font-weight:600;white-space:nowrap}
+.verdict{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--soft);font-size:14px}
+.lede a,.ref a{color:inherit;text-decoration-color:var(--line);text-underline-offset:3px}.lede a:hover,.ref a:hover{text-decoration-color:currentColor}
+.ref{font-size:12.5px;color:var(--muted);margin-top:40px;border-top:1px solid var(--line);padding-top:12px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+<h1>Communities that split and merge at the same time</h1>
+<p class="lede">An interactive reproduction of the toy model in Fig. 5 of <a href="https://doi.org/10.1103/PhysRevE.111.014312" target="_blank" rel="noopener">“Kaleidoscopic reorganization of network communities across different scales”</a> by Wonhee Jeong, Daekyung Lee, Heetae Kim and Sang Hoon Lee, <em>Phys. Rev. E</em> <b>111</b>, 014312 (2025). Two dense cores, 30 peripheral clusters, and Louvain modularity maximization with a resolution parameter γ. Drag γ upward and watch the number of communities <em>fall</em> while the cores are splitting apart.</p>
+
+<div class="stage-wrap">
+  <div class="stage" id="stage" aria-label="Coarse-grained network of building blocks with detected communities"></div>
+  <aside class="readout" aria-live="polite">
+    <div><div class="gbig"><small>γ =</small><span id="rg">0.36</span></div></div>
+    <dl class="kv">
+      <dt>Communities n<sub>c</sub></dt><dd id="rnc">–</dd>
+      <dt>Largest C<sub>1</sub></dt><dd id="rc1">–</dd>
+      <dt>Second largest C<sub>2</sub></dt><dd id="rc2">–</dd>
+      <dt>Modularity Q</dt><dd id="rq">–</dd>
+      <dt>Idealized n<sub>c</sub></dt><dd id="rpred">–</dd>
+    </dl>
+    <div class="legend" aria-label="Community colour key">
+      <span><i class="sw" style="background:var(--joint)"></i>Contains both cores</span>
+      <span><i class="sw" style="background:var(--a)"></i><span id="lgA">Contains core A</span></span>
+      <span><i class="sw" style="background:var(--b)"></i><span id="lgB">Contains core B</span></span>
+      <span><i class="sw" style="background:var(--sep)"></i>Peripheral cluster on its own</span>
+    </div>
+    <p class="note">Shaded regions are communities. Each circle is a building block (area ∝ nodes). Best of 5 Louvain runs at this γ, on network realization 1.</p>
+  </aside>
+</div>
+
+<div class="scrub">
+  <div class="scrub-head">
+    <h3 id="scrub-label">Resolution parameter γ</h3>
+    <div class="btns">
+      <button data-g="0">γ = 0</button><button data-g="0.16">0.16</button><button data-g="0.36">0.36</button><button data-g="0.51">0.51</button>
+      <button id="play">Play sweep</button>
+    </div>
+  </div>
+  <div class="track">
+    <svg id="tracksvg" viewBox="0 0 1000 86" preserveAspectRatio="none" aria-hidden="true"></svg>
+    <input type="range" id="gamma" min="0" max="0.8" step="0.005" value="0.36" aria-labelledby="scrub-label">
+  </div>
+  <div class="ticks"><span>0</span><span>0.2</span><span>0.4</span><span>0.6</span><span>0.8</span></div>
+  <p class="note" style="margin:4px 0 0">Behind the slider: the idealized n<sub>c</sub>(γ) from Eq. (5) (dashed) and, once the sweep below has run, the Louvain average (solid).</p>
+</div>
+
+<section>
+  <h2>Sweep over γ</h2>
+  <p class="sec-intro">Louvain is stochastic, so the paper averages many runs over many network realizations (100 × 100). Here you choose how many. The dip between the plateaus is the reorganization: core B detaches from core A and, in the same step, re-absorbs its own periphery.</p>
+  <div class="btns" style="margin-top:10px">
+    <label class="note">Realizations <input type="number" id="nreal" value="4" min="1" max="50"></label>
+    <label class="note">Runs each <input type="number" id="nrun" value="5" min="1" max="50"></label>
+    <label class="note">γ step <select id="gstep" style="font:inherit;padding:4px;border-radius:7px;border:1px solid var(--line);background:var(--block);color:var(--ink)"><option value="0.04">0.04</option><option value="0.02" selected>0.02</option><option value="0.01">0.01</option></select></label>
+    <button class="primary" id="runsweep">Run sweep</button>
+    <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+    <span class="note" id="sweepstat">Not run yet</span>
+  </div>
+  <div class="grid2">
+    <div class="card"><h3>Number of communities n<sub>c</sub>(γ)</h3><div id="chart-nc"></div><p class="chart-cap">Mean ± standard deviation, compare with Fig. 5(a). Dashed: best of 8 idealized block partitions. Vertical lines: thresholds from Eq. (5). Click to set γ.</p></div>
+    <div class="card"><h3>Largest and second-largest community sizes</h3><div id="chart-cs"></div><p class="chart-cap">Analogue of Fig. 2(b). C<sub>1</sub> falls monotonically while C<sub>2</sub> jumps up when core B takes its periphery with it.</p></div>
+  </div>
+  <div class="card" style="margin-top:18px">
+    <h3>Which community does each building block belong to?</h3>
+    <div class="heat-wrap"><div id="heat"></div></div>
+    <p class="chart-cap">Rows are building blocks, columns are γ values. Colour is the most frequent state across all runs; paler means less consistent. This is the membership flow of Fig. 3, reduced to the model's 32 blocks. Click a column to set γ.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Why the count drops: Eq. (5) on this network</h2>
+  <p class="sec-intro">Merging groups g and h changes modularity by ΔQ = I<sub>gh</sub>/M − γ K<sub>g</sub>K<sub>h</sub>/(2M²), so they stay together only while γ is below 2M I<sub>gh</sub>/(K<sub>g</sub>K<sub>h</sub>). A peripheral cluster is weighed against the total degree of the community it would join. When the cores split, core B's total degree shrinks from K<sub>A</sub>+K<sub>B</sub> to K<sub>B</sub>, and a periphery that was rejected at small γ becomes acceptable at a larger γ. That is the paper's inequality (8).</p>
+  <div class="grid2">
+    <div class="card">
+      <div class="eq">γ<sub>merge</sub> = 2M I<sub>gh</sub> / (K<sub>g</sub> K<sub>h</sub>)</div>
+      <table class="th" id="thtable"></table>
+      <div class="verdict" id="verdict"></div>
+    </div>
+    <div class="card">
+      <h3>Model parameters</h3>
+      <div class="btns" style="margin:4px 0 6px">
+        <button id="preset-paper">Paper (Fig. 5)</button>
+        <button id="preset-equal">Equal cores</button>
+        <button id="preset-flip">Periphery on the big core</button>
+      </div>
+      <div class="params" id="params"></div>
+      <p class="note">Reading of the paper used here: cores have internal edge probability p<sub>core</sub>, peripheral clusters p<sub>per</sub>, and each peripheral node sends exactly one edge to a random node of its master core (20 edges per 20-node cluster). Changing a parameter regenerates the network and clears the sweep.</p>
+    </div>
+  </div>
+</section>
+
+<p class="ref">Paper: Wonhee Jeong, Daekyung Lee, Heetae Kim and Sang Hoon Lee, “Kaleidoscopic reorganization of network communities across different scales,” <em>Phys. Rev. E</em> 111, 014312 (2025), <a href="https://doi.org/10.1103/PhysRevE.111.014312" target="_blank" rel="noopener">doi:10.1103/PhysRevE.111.014312</a>. Community detection here uses a from-scratch JavaScript Louvain implementation (Blondel et al. 2008) with the resolution parameter of Eq. (1).</p>
+<p class="ref" style="margin-top:6px;border-top:none;padding-top:0">This interactive demo was created by Claude Opus 5.5 (Anthropic).</p>
+</main>
+
+<script>
+"use strict";
+/* ---------------- RNG & network model ---------------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+
+const PRESETS={
+  paper:{nA:400,nB:200,kA:10,kB:20,nP:20,pCore:0.7,pPer:0.5,pAB:0.1,seed:1},
+  equal:{nA:300,nB:300,kA:15,kB:15,nP:20,pCore:0.7,pPer:0.5,pAB:0.1,seed:1},
+  flip:{nA:400,nB:200,kA:20,kB:10,nP:20,pCore:0.7,pPer:0.5,pAB:0.1,seed:1}
+};
+let P={...PRESETS.paper};
+
+function buildSBM(P,seed){
+  const rng=mulberry32(seed*7919+13);
+  const blocks=[];let off=0;
+  const add=(size,kind,master)=>{blocks.push({start:off,size,kind,master});off+=size;};
+  add(P.nA,'A',-1);add(P.nB,'B',-1);
+  for(let i=0;i<P.kA;i++)add(P.nP,'pA',0);
+  for(let i=0;i<P.kB;i++)add(P.nP,'pB',1);
+  const n=off,eu=[],ev=[];
+  const er=(b,p)=>{const s=blocks[b].start,z=blocks[b].size;for(let i=0;i<z;i++)for(let j=i+1;j<z;j++)if(rng()<p){eu.push(s+i);ev.push(s+j);}};
+  er(0,P.pCore);er(1,P.pCore);
+  {const a=blocks[0],b=blocks[1];for(let i=0;i<a.size;i++)for(let j=0;j<b.size;j++)if(rng()<P.pAB){eu.push(a.start+i);ev.push(b.start+j);}}
+  for(let b=2;b<blocks.length;b++){er(b,P.pPer);const bl=blocks[b],m=blocks[bl.master];
+    for(let i=0;i<bl.size;i++){eu.push(bl.start+i);ev.push(m.start+Math.floor(rng()*m.size));}}
+  const G={n,blocks,m:eu.length,...toCSR(n,eu,ev)};
+  G.nodeBlock=new Int32Array(n);blocks.forEach((bl,bi)=>{for(let i=0;i<bl.size;i++)G.nodeBlock[bl.start+i]=bi;});
+  // block-level weights W[b][b'] (diag = 2 L_b) and K_b
+  const nb=blocks.length;G.W=Array.from({length:nb},()=>new Float64Array(nb));G.K=new Float64Array(nb);G.tw=0;
+  for(let i=0;i<n;i++){const bi=G.nodeBlock[i];for(let e=G.start[i];e<G.start[i+1];e++){G.W[bi][G.nodeBlock[G.nbr[e]]]+=G.w[e];G.K[bi]+=G.w[e];G.tw+=G.w[e];}}
+  return G;
+}
+function toCSR(n,eu,ev){
+  const deg=new Int32Array(n+1);for(let e=0;e<eu.length;e++){deg[eu[e]+1]++;deg[ev[e]+1]++;}
+  for(let i=0;i<n;i++)deg[i+1]+=deg[i];
+  const nbr=new Int32Array(deg[n]),w=new Float64Array(deg[n]).fill(1),pos=deg.slice(0,n);
+  for(let e=0;e<eu.length;e++){const u=eu[e],v=ev[e];nbr[pos[u]++]=v;nbr[pos[v]++]=u;}
+  return {start:deg,nbr,w};
+}
+
+/* ---------------- Louvain with resolution γ ----------------
+   Q = Σ_c [ S_c/(2M) − γ (K_c/(2M))² ],  S_c = 2 L_c. Self-loops of aggregated nodes carry weight 2L. */
+function louvain(G,gamma,rng){
+  let n=G.n,st=G.start,nb=G.nbr,w=G.w;const tw=G.tw;
+  const memb=new Int32Array(G.n);for(let i=0;i<G.n;i++)memb[i]=i;
+  for(let level=0;level<30;level++){
+    const k=new Float64Array(n);for(let i=0;i<n;i++)for(let e=st[i];e<st[i+1];e++)k[i]+=w[e];
+    const com=new Int32Array(n),tot=new Float64Array(n);for(let i=0;i<n;i++){com[i]=i;tot[i]=k[i];}
+    const order=new Int32Array(n);for(let i=0;i<n;i++)order[i]=i;
+    for(let i=n-1;i>0;i--){const j=Math.floor(rng()*(i+1));const t=order[i];order[i]=order[j];order[j]=t;}
+    const nw=new Float64Array(n).fill(-1),nl=new Int32Array(n+1);
+    let anyMove=false,emptyHint=0;
+    for(let pass=0;pass<60;pass++){
+      let moves=0;
+      for(let oi=0;oi<n;oi++){
+        const i=order[oi],ci=com[i];let cnt=0;
+        nw[ci]=0;nl[cnt++]=ci;
+        for(let e=st[i];e<st[i+1];e++){const j=nb[e];if(j===i)continue;const c=com[j];if(nw[c]<0){nw[c]=0;nl[cnt++]=c;}nw[c]+=w[e];}
+        tot[ci]-=k[i];
+        const f=gamma*k[i]/tw;
+        let best=ci,bg=nw[ci]-f*tot[ci];
+        for(let q=1;q<cnt;q++){const c=nl[q],g=nw[c]-f*tot[c];if(g>bg+1e-12){bg=g;best=c;}}
+        if(bg<-1e-12){ // being alone (gain 0) beats every option: move to an empty label
+          let lab=-1;for(let t=0;t<n;t++){const q=(emptyHint+t)%n;if(tot[q]===0&&q!==ci){lab=q;break;}}
+          if(lab>=0){best=lab;emptyHint=lab+1;}
+        }
+        tot[best]+=k[i];
+        if(best!==ci){com[i]=best;moves++;}
+        for(let q=0;q<cnt;q++)nw[nl[q]]=-1;
+      }
+      if(moves===0)break;anyMove=true;
+    }
+    const map=new Int32Array(n).fill(-1);let nc=0;
+    for(let i=0;i<n;i++)if(map[com[i]]<0)map[com[i]]=nc++;
+    for(let i=0;i<G.n;i++)memb[i]=map[com[memb[i]]];
+    if(!anyMove||nc===n)break;
+    const rows=Array.from({length:nc},()=>new Map());
+    for(let i=0;i<n;i++){const a=map[com[i]],r=rows[a];for(let e=st[i];e<st[i+1];e++){const b=map[com[nb[e]]];r.set(b,(r.get(b)||0)+w[e]);}}
+    const deg=new Int32Array(nc+1);for(let a=0;a<nc;a++)deg[a+1]=deg[a]+rows[a].size;
+    const nb2=new Int32Array(deg[nc]),w2=new Float64Array(deg[nc]);
+    for(let a=0;a<nc;a++){let p=deg[a];for(const [b,x] of rows[a]){nb2[p]=b;w2[p++]=x;}}
+    n=nc;st=deg;nb=nb2;w=w2;
+  }
+  return memb;
+}
+function analyze(G,memb,gamma){
+  let nc=0;for(let i=0;i<G.n;i++)if(memb[i]+1>nc)nc=memb[i]+1;
+  const size=new Int32Array(nc),S=new Float64Array(nc),K=new Float64Array(nc);
+  for(let i=0;i<G.n;i++){const c=memb[i];size[c]++;for(let e=G.start[i];e<G.start[i+1];e++){K[c]+=G.w[e];if(memb[G.nbr[e]]===c)S[c]+=G.w[e];}}
+  let Q=0;for(let c=0;c<nc;c++)Q+=S[c]/G.tw-gamma*(K[c]/G.tw)**2;
+  const sorted=Array.from(size).sort((a,b)=>b-a);
+  // block majority + purity
+  const maj=[],pure=[];
+  for(const bl of G.blocks){const cnt=new Map();for(let i=0;i<bl.size;i++){const c=memb[bl.start+i];cnt.set(c,(cnt.get(c)||0)+1);}
+    let bc=-1,bv=-1;for(const [c,v] of cnt)if(v>bv){bv=v;bc=c;}maj.push(bc);pure.push(bv===bl.size);}
+  const cA=maj[0],cB=maj[1];
+  const state=maj.map((c,bi)=>{ // 0 joint, 1 with A, 2 with B, 3 separate
+    if(c===cA&&c===cB)return 0;if(c===cA)return 1;if(c===cB)return 2;return 3;});
+  return {nc,Q,C1:sorted[0]||0,C2:sorted[1]||0,size,maj,pure,state};
+}
+
+/* ---------------- Idealized block-level prediction (8 candidate partitions) ---------------- */
+function candidates(G){
+  const nb=G.blocks.length,out=[];
+  for(const together of [true,false])for(const attA of [true,false])for(const attB of [true,false]){
+    const lab=new Int32Array(nb);let next=2;lab[0]=0;lab[1]=together?0:1;
+    for(let b=2;b<nb;b++){const bl=G.blocks[b];const att=bl.kind==='pA'?attA:attB;lab[b]=att?lab[bl.master]:next++;}
+    const ncom=next-(together?1:0);
+    // S_c and K_c
+    const S=new Float64Array(next),K=new Float64Array(next);
+    for(let b=0;b<nb;b++){K[lab[b]]+=G.K[b];for(let c=0;c<nb;c++)if(lab[c]===lab[b])S[lab[b]]+=G.W[b][c];}
+    let s=0,k2=0;for(let c=0;c<next;c++){s+=S[c];k2+=K[c]*K[c];}
+    out.push({ncom,a:s/G.tw,b:k2/(G.tw*G.tw)}); // Q(γ) = a − γ b
+  }
+  return out;
+}
+function predict(cands,g){let best=null,bq=-Infinity;for(const c of cands){const q=c.a-g*c.b;if(q>bq+1e-12){bq=q;best=c;}}return best.ncom;}
+function thresholds(G){
+  const M2=G.tw,nb=G.blocks.length;const KA=G.K[0],KB=G.K[1],IAB=G.W[0][1];
+  const mean=a=>a.reduce((x,y)=>x+y,0)/Math.max(1,a.length);
+  const det=[],jA=[],jB=[];
+  for(let b=2;b<nb;b++){const bl=G.blocks[b],I=G.W[b][bl.master],Kp=G.K[b];
+    det.push(M2*I/(Kp*(M2-Kp)));(bl.kind==='pA'?jA:jB).push(M2*I/(Kp*G.K[bl.master]));}
+  return {M:M2/2,KA,KB,IAB,Kp:mean(G.blocks.slice(2).map((_,i)=>G.K[i+2])),
+    Ip:mean(G.blocks.slice(2).map((bl,i)=>G.W[i+2][bl.master])),
+    det:mean(det),split:M2*IAB/(KA*KB),gA:jA.length?mean(jA):NaN,gB:jB.length?mean(jB):NaN};
+}
+
+/* ---------------- state ---------------- */
+const $=id=>document.getElementById(id);
+const GMAX=0.8;
+let G0=null,cands=null,TH=null,gamma=0.36,sweep=null,sweepJob=null;
+const liveRng=mulberry32(2024);
+const css=v=>getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const STATE_VAR=['--joint','--a','--b','--sep'];
+const STATE_NAME=['with both cores','in core A\u2019s community','in core B\u2019s community','on its own'];
+
+function regenerate(){
+  G0=buildSBM(P,P.seed);cands=candidates(G0);TH=thresholds(G0);
+  cancelSweep();sweep=null;$('sweepstat').textContent='Not run yet';$('prog').style.width='0';
+  $('lgA').textContent=`Contains core A (${P.nA} nodes)`;$('lgB').textContent=`Contains core B (${P.nB} nodes)`;layoutStage();renderTheory();renderLive();renderCharts();renderHeat();renderTrack();
+}
+
+/* ---------------- stage (coarse-grained network) ---------------- */
+let LAY=null;
+function layoutStage(){
+  const bl=G0.blocks,rp=b=>7.5*Math.sqrt(b.size/20)+1.5;
+  const r=bl.map(rp);const pos=[];
+  const ringR=(k,rr,core,span)=>Math.max(core+62,k*(2*rr+14)/span);
+  const spanA=Math.min(Math.PI*1.35,0.5+P.kA*0.22),spanB=Math.min(Math.PI*1.45,0.5+P.kB*0.16);
+  const RA=ringR(P.kA,r[2]||8,r[0],spanA),RB=ringR(P.kB,r[2]||8,r[1],spanB);
+  const gap=r[0]+r[1]+95;
+  pos[0]=[0,0];pos[1]=[gap,0];
+  let ia=0,ib=0;
+  for(let b=2;b<bl.length;b++){
+    if(bl[b].kind==='pA'){const t=P.kA===1?0.5:ia/(P.kA-1);const ang=Math.PI+(t-0.5)*spanA;pos[b]=[Math.cos(ang)*RA,Math.sin(ang)*RA];ia++;}
+    else{const t=P.kB===1?0.5:ib/(P.kB-1);const ang=(t-0.5)*spanB;pos[b]=[gap+Math.cos(ang)*RB,Math.sin(ang)*RB];ib++;}
+  }
+  let x0=Infinity,x1=-Infinity,y0=Infinity,y1=-Infinity;
+  pos.forEach((p,i)=>{const R=r[i]+18;x0=Math.min(x0,p[0]-R);x1=Math.max(x1,p[0]+R);y0=Math.min(y0,p[1]-R);y1=Math.max(y1,p[1]+R);});
+  LAY={pos,r,vb:[x0-10,y0-10,x1-x0+20,y1-y0+20]};
+}
+let liveResult=null;
+function renderLive(){
+  let best=null;
+  for(let t=0;t<5;t++){const m=louvain(G0,gamma,liveRng);const a=analyze(G0,m,gamma);if(!best||a.Q>best.Q)best=a;}
+  liveResult=best;drawStage(best);
+  $('rg').textContent=String(+gamma.toFixed(3));
+  $('rnc').textContent=best.nc;$('rc1').textContent=best.C1;$('rc2').textContent=best.C2;
+  $('rq').textContent=best.Q.toFixed(4);$('rpred').textContent=predict(cands,gamma);
+}
+function drawStage(res){
+  const {pos,r,vb}=LAY,bl=G0.blocks;const pad=13;
+  const comState=new Map();res.maj.forEach((c,b)=>{if(!comState.has(c)||b<2)comState.set(c,res.state[b]);});
+  // community blobs
+  const groups=new Map();res.maj.forEach((c,b)=>{if(!groups.has(c))groups.set(c,[]);groups.get(c).push(b);});
+  let blobs='';
+  for(const [c,members] of groups){
+    const st=res.state[members[0]];const col=`var(${STATE_VAR[st]})`;
+    const inC=new Set(members);let g='';
+    for(const b of members){
+      g+=`<circle cx="${pos[b][0]}" cy="${pos[b][1]}" r="${r[b]+(members.length===1&&b>=2?6:pad)}"/>`;
+      if(b>=2&&inC.has(bl[b].master)){const m=bl[b].master;g+=`<line x1="${pos[b][0]}" y1="${pos[b][1]}" x2="${pos[m][0]}" y2="${pos[m][1]}" stroke-width="${2*(r[b]+pad)}"/>`;}
+    }
+    if(inC.has(0)&&inC.has(1))g+=`<line x1="${pos[0][0]}" y1="0" x2="${pos[1][0]}" y2="0" stroke-width="${2*(Math.min(r[0],r[1])+pad)}"/>`;
+    blobs+=`<g fill="${col}" stroke="${col}" stroke-linecap="round" opacity="0.3">${g}</g>`;
+  }
+  let links=`<line x1="${pos[0][0]}" y1="0" x2="${pos[1][0]}" y2="0" stroke="var(--ink)" stroke-width="3" opacity=".55"/>`;
+  for(let b=2;b<bl.length;b++){const m=bl[b].master;links+=`<line x1="${pos[b][0]}" y1="${pos[b][1]}" x2="${pos[m][0]}" y2="${pos[m][1]}" stroke="var(--muted)" stroke-width="1.1" opacity=".7"/>`;}
+  let nodes='';
+  bl.forEach((b,i)=>{
+    const st=res.state[i];const lbl=i===0?'Core A':i===1?'Core B':(b.kind==='pA'?'Peripheral cluster of core A':'Peripheral cluster of core B');
+    const csize=res.size[res.maj[i]];
+    nodes+=`<circle cx="${pos[i][0]}" cy="${pos[i][1]}" r="${r[i]}" fill="var(--block)" stroke="var(--ink)" stroke-width="${i<2?1.8:1.2}" ${res.pure[i]?'':'stroke-dasharray="3 2"'}><title>${lbl}, ${b.size} nodes. Currently ${STATE_NAME[st]}; that community has ${csize} nodes.${res.pure[i]?'':' This block is split across communities.'}</title></circle>`;
+  });
+  const lab=`<text x="${pos[0][0]}" y="${5}" text-anchor="middle" font-family="var(--sans)" font-size="15" font-weight="600" fill="var(--ink)">A</text><text x="${pos[1][0]}" y="${5}" text-anchor="middle" font-family="var(--sans)" font-size="14" font-weight="600" fill="var(--ink)">B</text>`;
+  $('stage').innerHTML=`<svg viewBox="${vb.join(' ')}" role="img" aria-label="${res.nc} communities at gamma ${gamma.toFixed(3)}">${blobs}${links}${nodes}${lab}</svg>`;
+}
+
+/* ---------------- slider track ---------------- */
+function renderTrack(){
+  const W=1000,H=86,top=8,bot=8;const ymax=Math.max(2,G0.blocks.length+1);
+  const X=g=>g/GMAX*W,Y=v=>H-bot-(v/ymax)*(H-top-bot);
+  let d='';for(let i=0;i<=400;i++){const g=i/400*GMAX;const y=Y(predict(cands,g));d+=(i?'L':'M')+X(g).toFixed(1)+' '+y.toFixed(1);}
+  let s=`<rect x="0" y="0" width="${W}" height="${H}" fill="var(--soft)" rx="8" opacity=".55"/>`;
+  s+=`<path d="${d}" fill="none" stroke="var(--muted)" stroke-width="1.6" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"/>`;
+  if(sweep&&sweep.done>0){let p='',a='';sweep.gs.forEach((g,i)=>{const v=sweep.nc[i];if(!v.length)return;const m=v.reduce((x,y)=>x+y,0)/v.length;p+=(p?'L':'M')+X(g).toFixed(1)+' '+Y(m).toFixed(1);});
+    s+=`<path d="${p}" fill="none" stroke="var(--ink)" stroke-width="2.4" vector-effect="non-scaling-stroke"/>`;}
+  $('tracksvg').innerHTML=s;
+}
+
+/* ---------------- sweep ---------------- */
+function cancelSweep(){if(sweepJob){clearTimeout(sweepJob);sweepJob=null;}$('runsweep').textContent='Run sweep';}
+function startSweep(){
+  if(sweepJob){cancelSweep();$('sweepstat').textContent='Stopped';return;}
+  const R=Math.max(1,Math.min(50,+$('nreal').value||1)),T=Math.max(1,Math.min(50,+$('nrun').value||1)),step=+$('gstep').value;
+  const gs=[];for(let g=0;g<=GMAX+1e-9;g+=step)gs.push(+g.toFixed(4));
+  const nb=G0.blocks.length;
+  sweep={gs,nc:gs.map(()=>[]),c1:gs.map(()=>[]),c2:gs.map(()=>[]),st:gs.map(()=>Array.from({length:nb},()=>[0,0,0,0])),done:0,total:R*T*gs.length};
+  let r=0,gi=0,t=0,G=G0;const rng=mulberry32(99);
+  $('runsweep').textContent='Stop';
+  const tick=()=>{
+    const t0=performance.now();
+    while(performance.now()-t0<35){
+      if(r>=R){sweepJob=null;$('runsweep').textContent='Run sweep';$('sweepstat').textContent=`Done: ${sweep.total} Louvain runs`;renderCharts();renderHeat();renderTrack();return;}
+      if(gi===0&&t===0&&r>0&&G.__r!==r){G=buildSBM(P,P.seed+r);G.__r=r;}
+      const a=analyze(G,louvain(G,gs[gi],rng),gs[gi]);
+      sweep.nc[gi].push(a.nc);sweep.c1[gi].push(a.C1);sweep.c2[gi].push(a.C2);a.state.forEach((s,b)=>sweep.st[gi][b][s]++);
+      sweep.done++;
+      if(++t>=T){t=0;if(++gi>=gs.length){gi=0;r++;}}
+    }
+    $('prog').style.width=(100*sweep.done/sweep.total)+'%';
+    $('sweepstat').textContent=`Realization ${Math.min(r+1,R)} of ${R}`;
+    renderCharts();renderHeat();renderTrack();
+    sweepJob=setTimeout(tick,0);
+  };
+  sweepJob=setTimeout(tick,0);
+}
+const mean=a=>a.reduce((x,y)=>x+y,0)/a.length;
+const sd=a=>{const m=mean(a);return Math.sqrt(a.reduce((x,y)=>x+(y-m)*(y-m),0)/a.length);};
+
+/* ---------------- charts ---------------- */
+function chartSVG(id,{ymax,series,vlines=[],ylab}){
+  const W=560,H=270,L=46,R=12,T=12,B=36;
+  const X=g=>L+g/GMAX*(W-L-R),Y=v=>H-B-v/ymax*(H-T-B);
+  let s=`<svg viewBox="0 0 ${W} ${H}" data-chart="${id}" style="cursor:crosshair" role="img" aria-label="${ylab} versus gamma">`;
+  const yt=niceTicks(ymax);
+  for(const v of yt)s+=`<line x1="${L}" x2="${W-R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--soft)"/><text x="${L-6}" y="${Y(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v>=1000?(v/1000)+'k':v}</text>`;
+  for(let g=0;g<=GMAX+1e-9;g+=0.2)s+=`<text x="${X(g)}" y="${H-B+16}" text-anchor="middle" font-size="11" fill="var(--muted)">${+g.toFixed(1)}</text>`;
+  s+=`<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle" font-size="12" fill="var(--muted)" font-style="italic" font-family="var(--serif)">γ</text>`;
+  s+=`<line x1="${L}" x2="${W-R}" y1="${H-B}" y2="${H-B}" stroke="var(--line)"/>`;
+  vlines.forEach((v,i)=>{if(!(v.x>0&&v.x<GMAX))return;s+=`<line x1="${X(v.x)}" x2="${X(v.x)}" y1="${T}" y2="${H-B}" stroke="var(${v.c})" stroke-width="1.3" stroke-dasharray="2 3"/><text transform="translate(${X(v.x)+(i%2?11:-4)},${H-B-6}) rotate(-90)" font-size="10.5" fill="var(${v.c})">${v.label}</text>`;});
+  for(const se of series){
+    if(se.kind==='step'){s+=`<path d="${se.d}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="5 4"/>`;continue;}
+    se.pts.forEach(p=>{if(p.sd>0)s+=`<line x1="${X(p.x)}" x2="${X(p.x)}" y1="${Y(p.y-p.sd)}" y2="${Y(Math.min(ymax,p.y+p.sd))}" stroke="${se.color}" stroke-width="1" opacity=".55"/>`;
+      s+=se.shape==='sq'?`<rect x="${X(p.x)-3}" y="${Y(p.y)-3}" width="6" height="6" fill="${se.color}"/>`:`<circle cx="${X(p.x)}" cy="${Y(p.y)}" r="3.2" fill="${se.color}"/>`;});
+  }
+  s+=`<line x1="${X(gamma)}" x2="${X(gamma)}" y1="${T}" y2="${H-B}" stroke="var(--cursor)" stroke-width="2"/>`;
+  s+=`<rect x="${L}" y="${T}" width="${W-L-R}" height="${H-T-B}" fill="transparent" data-x0="${L}" data-x1="${W-R}"/></svg>`;
+  return s;
+}
+function niceTicks(max){const raw=max/5,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p,st=(m<1.5?1:m<3?2:m<7?5:10)*p;const out=[];for(let v=0;v<=max+1e-9;v+=st)out.push(+v.toFixed(6));return out;}
+function renderCharts(){
+  const nb=G0.blocks.length;const X=g=>g;
+  let d='';for(let i=0;i<=400;i++){const g=i/400*GMAX;const W=560,L=46,R=12,T=12,B=36,H=270,ymax=nb+2;
+    d+=(i?'L':'M')+(L+g/GMAX*(W-L-R)).toFixed(1)+' '+(H-B-predict(cands,g)/ymax*(H-T-B)).toFixed(1);}
+  const ncPts=[],c1=[],c2=[];
+  if(sweep)sweep.gs.forEach((g,i)=>{if(!sweep.nc[i].length)return;ncPts.push({x:g,y:mean(sweep.nc[i]),sd:sd(sweep.nc[i])});
+    c1.push({x:g,y:mean(sweep.c1[i]),sd:sd(sweep.c1[i])});c2.push({x:g,y:mean(sweep.c2[i]),sd:sd(sweep.c2[i])});});
+  const vl=[{x:TH.det,label:'periphery detaches',c:'--sep'},{x:TH.split,label:'cores split',c:'--joint'},{x:TH.gB,label:'B\u2019s periphery leaves',c:'--b'},{x:TH.gA,label:'A\u2019s periphery leaves',c:'--a'}];
+  $('chart-nc').innerHTML=chartSVG('nc',{ymax:nb+2,ylab:'Number of communities',vlines:vl,series:[{kind:'step',d},{pts:ncPts,color:'var(--ink)',shape:'sq'}]});
+  const n=G0.n;
+  $('chart-cs').innerHTML=chartSVG('cs',{ymax:n,ylab:'Community size',series:[{pts:c1,color:'var(--ink)',shape:'sq'},{pts:c2,color:'var(--cursor)'}]})
+    +`<div class="legend" style="flex-direction:row;gap:16px;margin-top:4px"><span><i class="sw" style="background:var(--ink);border-radius:1px"></i>Largest, C₁</span><span><i class="sw" style="background:var(--cursor);border-radius:50%"></i>Second largest, C₂</span></div>`;
+}
+function renderHeat(){
+  const bl=G0.blocks,nb=bl.length;
+  if(!sweep){$('heat').innerHTML=`<p class="note" style="padding:18px 0">Run the sweep to fill in membership over γ.</p>`;return;}
+  const gs=sweep.gs,cw=Math.max(8,Math.min(22,700/gs.length)),ch=nb>40?5:7,L=110,T=4;
+  const W=L+gs.length*cw+8,H=T+nb*ch+40;
+  let s=`<svg viewBox="0 0 ${W} ${H}" style="min-width:${Math.min(W,560)}px;max-width:${W}px" data-heat="1" role="img" aria-label="Block membership heatmap">`;
+  const cols=STATE_VAR.map(css);
+  gs.forEach((g,gi)=>{bl.forEach((b,bi)=>{const c=sweep.st[gi][bi];const tot=c[0]+c[1]+c[2]+c[3];if(!tot)return;
+    let k=0;for(let q=1;q<4;q++)if(c[q]>c[k])k=q;const f=c[k]/tot;
+    s+=`<rect x="${L+gi*cw}" y="${T+bi*ch}" width="${cw-1}" height="${ch-1}" fill="${cols[k]}" opacity="${(0.25+0.75*f).toFixed(2)}"/>`;});});
+  const lbl=(y,t)=>`<text x="${L-6}" y="${y}" text-anchor="end" font-size="11" fill="var(--muted)">${t}</text>`;
+  s+=lbl(T+ch+4,'Cores A, B');
+  if(P.kA)s+=lbl(T+(2+P.kA/2)*ch+4,`A\u2019s periphery (${P.kA})`);
+  if(P.kB)s+=lbl(T+(2+P.kA+P.kB/2)*ch+4,`B\u2019s periphery (${P.kB})`);
+  s+=`<line x1="${L}" x2="${L+gs.length*cw}" y1="${T+2*ch-0.5}" y2="${T+2*ch-0.5}" stroke="var(--panel)" stroke-width="2"/>`;
+  s+=`<line x1="${L}" x2="${L+gs.length*cw}" y1="${T+(2+P.kA)*ch-0.5}" y2="${T+(2+P.kA)*ch-0.5}" stroke="var(--panel)" stroke-width="2"/>`;
+  gs.forEach((g,gi)=>{if(Math.abs(g*10-Math.round(g*10))<1e-6&&Math.round(g*10)%2===0)s+=`<text x="${L+gi*cw+cw/2}" y="${T+nb*ch+16}" text-anchor="middle" font-size="11" fill="var(--muted)">${+g.toFixed(1)}</text>`;});
+  s+=`<text x="${L+gs.length*cw/2}" y="${T+nb*ch+34}" text-anchor="middle" font-size="12" font-style="italic" font-family="var(--serif)" fill="var(--muted)">γ</text>`;
+  const cx=L+(gamma/GMAX)*(gs.length-1)*cw+cw/2;
+  s+=`<line x1="${cx}" x2="${cx}" y1="${T-2}" y2="${T+nb*ch+2}" stroke="var(--cursor)" stroke-width="2"/>`;
+  s+=`<rect x="${L}" y="0" width="${gs.length*cw}" height="${T+nb*ch}" fill="transparent" data-cw="${cw}" data-l="${L}" data-n="${gs.length}"/></svg>`;
+  $('heat').innerHTML=s;
+}
+
+/* ---------------- theory panel ---------------- */
+function renderTheory(){
+  const t=TH,f=x=>isFinite(x)?x.toFixed(3):'–',k=x=>Math.round(x).toLocaleString('en-US');
+  $('thtable').innerHTML=`
+  <tr><th>Merge in question</th><th>I<sub>gh</sub></th><th>K<sub>g</sub> · K<sub>h</sub></th><th style="text-align:right">γ below which it merges</th></tr>
+  <tr><td>Peripheral cluster with everything else (all in one)</td><td>${t.Ip.toFixed(1)}</td><td>${k(t.Kp)} · ${k(2*t.M-t.Kp)}</td><td class="num" style="color:var(--sep)">${f(t.det)}</td></tr>
+  <tr><td>Core A with core B</td><td>${k(t.IAB)}</td><td>${k(t.KA)} · ${k(t.KB)}</td><td class="num" style="color:var(--joint)">${f(t.split)}</td></tr>
+  <tr><td>Peripheral cluster with core A alone</td><td>${t.Ip.toFixed(1)}</td><td>${k(t.Kp)} · ${k(t.KA)}</td><td class="num" style="color:var(--a)">${f(t.gA)}</td></tr>
+  <tr><td>Peripheral cluster with core B alone</td><td>${t.Ip.toFixed(1)}</td><td>${k(t.Kp)} · ${k(t.KB)}</td><td class="num" style="color:var(--b)">${f(t.gB)}</td></tr>
+  <tr><td colspan="4" class="note">M = ${k(t.M)} edges. Values averaged over peripheral clusters of this realization.</td></tr>`;
+  const dipB=P.kB>0&&t.split<t.gB&&t.det<t.split, dipA=P.kA>0&&t.split<t.gA&&t.det<t.split;
+  let v;
+  if(dipB||dipA){const who=dipB&&dipA?'both cores':(dipB?'core B':'core A');const k2=dipB&&dipA?P.kA+P.kB:(dipB?P.kB:P.kA);
+    v=`Dip expected. The cores split at γ ≈ ${f(t.split)}, which is below ${dipB?f(t.gB):f(t.gA)}, so ${who} immediately re-absorb${dipB&&dipA?'':'s'} ${k2} peripheral clusters that had already left the joint community. One split, ${k2} merges: n<sub>c</sub> drops as γ grows.`;}
+  else v=`No dip expected. When the cores split at γ ≈ ${f(t.split)}, neither core is small enough (in total degree) to take back its periphery, so n<sub>c</sub> only grows. Try the “Paper” preset to bring the dip back.`;
+  $('verdict').innerHTML=v;
+}
+
+/* ---------------- parameters UI ---------------- */
+const PDEF=[
+  ['nA','Core A size',50,600,10,0],['nB','Core B size',50,600,10,0],
+  ['kA','Peripheral clusters on A',0,30,1,0],['kB','Peripheral clusters on B',0,30,1,0],
+  ['nP','Peripheral cluster size',5,40,1,0],['pCore','p within cores',0.1,1,0.05,2],
+  ['pPer','p within peripheral clusters',0.1,1,0.05,2],['pAB','p between cores',0.01,0.3,0.01,2],['seed','Random seed',1,99,1,0]];
+function buildParams(){
+  $('params').innerHTML=PDEF.map(([k,l,mi,ma,st,dp])=>`<label><span class="row">${l}<b id="v-${k}">${(+P[k]).toFixed(dp)}</b></span><input class="p" type="range" id="p-${k}" min="${mi}" max="${ma}" step="${st}" value="${P[k]}"></label>`).join('');
+  PDEF.forEach(([k,,,,,dp])=>{const el=$('p-'+k);
+    el.addEventListener('input',()=>{$('v-'+k).textContent=(+el.value).toFixed(dp);});
+    el.addEventListener('change',()=>{P[k]=+el.value;regenerate();});});
+}
+function applyPreset(name){P={...PRESETS[name]};buildParams();regenerate();}
+
+/* ---------------- interaction ---------------- */
+let pending=false;
+function setGamma(g,fromSlider){
+  gamma=Math.max(0,Math.min(GMAX,Math.round(g/0.005)*0.005));
+  if(!fromSlider)$('gamma').value=gamma;
+  if(pending)return;pending=true;
+  requestAnimationFrame(()=>{pending=false;renderLive();renderCharts();renderHeat();});
+}
+$('gamma').addEventListener('input',e=>setGamma(+e.target.value,true));
+document.querySelectorAll('[data-g]').forEach(b=>b.addEventListener('click',()=>{stopPlay();setGamma(+b.dataset.g);}));
+$('runsweep').addEventListener('click',startSweep);
+['nreal','nrun','gstep'].forEach(id=>$(id).addEventListener('change',()=>{}));
+$('preset-paper').addEventListener('click',()=>applyPreset('paper'));
+$('preset-equal').addEventListener('click',()=>applyPreset('equal'));
+$('preset-flip').addEventListener('click',()=>applyPreset('flip'));
+function chartClick(e){
+  const svg=e.target.closest('svg');if(!svg)return;
+  const pt=svg.createSVGPoint();pt.x=e.clientX;pt.y=e.clientY;const p=pt.matrixTransform(svg.getScreenCTM().inverse());
+  const hit=svg.querySelector('rect[data-x0]');
+  if(hit){const x0=+hit.dataset.x0,x1=+hit.dataset.x1;if(p.x<x0||p.x>x1)return;stopPlay();setGamma((p.x-x0)/(x1-x0)*GMAX);return;}
+  const h=svg.querySelector('rect[data-cw]');
+  if(h){const gi=Math.floor((p.x-(+h.dataset.l))/(+h.dataset.cw));if(gi<0||gi>=+h.dataset.n)return;stopPlay();setGamma(sweep.gs[gi]);}
+}
+['chart-nc','chart-cs','heat'].forEach(id=>$(id).addEventListener('click',chartClick));
+let playTimer=null;
+function stopPlay(){if(playTimer){clearInterval(playTimer);playTimer=null;$('play').textContent='Play sweep';}}
+$('play').addEventListener('click',()=>{
+  if(playTimer){stopPlay();return;}
+  setGamma(0);
+  $('play').textContent='Pause';
+  playTimer=setInterval(()=>{if(gamma>=GMAX-1e-9){stopPlay();return;}setGamma(gamma+0.005);},90);
+});
+let resizeT;window.addEventListener('resize',()=>{clearTimeout(resizeT);resizeT=setTimeout(renderHeat,150);});
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{renderHeat();});
+
+buildParams();regenerate();
+</script>
+</body>
+</html>
