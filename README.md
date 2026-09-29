@@ -21,21 +21,6 @@ The paper shows that increasing the modularity resolution parameter γ does not 
 - **Theory panel:** evaluates the merge thresholds `γ = 2M·I_gh / (K_g K_h)` from Eq. (5) on the generated network and reports whether a dip in n_c is expected (the paper's inequality (8)).
 - **Adjustable model:** every SBM parameter can be changed; presets include the paper's setup, equal cores (no dip), and swapped peripheries.
 
-## Running it
-
-Everything is in a single self-contained file, `index.html`. No build step or server is needed:
-
-- open `index.html` directly in a browser, or
-- publish the repository with GitHub Pages (Settings → Pages → deploy from the `main` branch root).
-
-The page loads two web fonts from Google Fonts and falls back to system fonts when offline.
-
-## Notes on the model
-
-- The paper says the connection probability "within small and large communities is set to 0.5 and 0.7." Here this is read as 0.5 inside peripheral clusters and 0.7 inside both cores. All values are editable in the page.
-- With these parameters, Eq. (5) predicts that the 200-node core (the one with 20 peripheral clusters) re-absorbs its periphery after the cores split, because its total degree is much smaller. The simulation agrees. The paper's text attributes this to the 400-node core; its Fig. 5(d) appears consistent with the 200-node core.
-- Results are averaged over fewer runs than in the paper (100 realizations × 100 runs) by default; increase the counts in the page for smoother curves.
-
 ## Credits
 
 This interactive demo was created by Claude Opus 5.5 (Anthropic), based on the paper above. All scientific credit belongs to the paper's authors.
